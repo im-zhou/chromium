@@ -1,0 +1,11 @@
+executable("URL_Simple") {
+ sources = [
+   "mongoose.h",
+   "mongoose.c",
+   "main.cc",
+ ]
+   deps = [
+    "//base",
+    "//net",
+  ]
+}
