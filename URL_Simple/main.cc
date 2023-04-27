@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <cstring>
+#include <string>
 #include "base/at_exit.h"
 #include "base/callback.h"
 #include "base/command_line.h"
@@ -189,7 +190,7 @@ void provider(struct mg_http_message* hm, struct mg_connection* c) {
   char method[hm->method.len ];
   strncpy(method, hm->method.ptr, hm->method.len);
   method[hm->method.len] = '\0';
-
+  
   //std::cerr << "" << s->ptr;
   MG_INFO(("URL from X-ORIGINAL-URL  %s",s->ptr));
   // Create request
@@ -216,19 +217,27 @@ void provider(struct mg_http_message* hm, struct mg_connection* c) {
   MG_INFO(("VALUE  %s",value));
     //std::cerr << "value now " << value << std::endl;
     //headers.SetHeader(key, value);
+     if (mg_strcmp(*k, mg_str("Referer")) == 0) {
+      req->SetReferrer(value);
+      continue;
+    }
     req->SetExtraRequestHeaderByName(key, value, true);
   }
-  //req->SetExtraRequestHeaders(headers);
 
   // POST DATA
   if (hm->body.len > 0) {
-    char body[hm->body.len+1];
-    memcpy(body, hm->body.ptr, hm->body.len);
-    body[hm->body.len] = '\0';
-    //std::cerr << "body to upload " << body << std::endl;
-    MG_INFO(("body to upload  %s",body));
-    req->set_upload(CreateSimpleUploadData(body));
+    // std::string body(hm->body.ptr, hm->body.len);
+    // char body[] = "{\"key1\":\"value1\", \"key2\":\"value2\"}";
+    // char body[hm->body.len+1];
+    // memcpy(body, hm->body.ptr, hm->body.len);
+    // body[hm->body.len] = '\0';
+    // std::cerr << "body to upload " << body << std::endl;
+    // MG_INFO(("body to upload  %s",body));
+    req->set_upload(CreateSimpleUploadData(hm->body.ptr));
   }
+  net::HttpRawRequestHeaders raw_req_headers;
+  req->SetRequestHeadersCallback(base::BindRepeating(
+        &net::HttpRawRequestHeaders::Assign, base::Unretained(&raw_req_headers)));
   req->set_method(method);
   req->Start();
 
@@ -236,6 +245,13 @@ void provider(struct mg_http_message* hm, struct mg_connection* c) {
   base::ThreadPoolInstance::Get()->Shutdown();
   base::ThreadPoolInstance::Get()->JoinForTesting();
   base::ThreadPoolInstance::Set(nullptr);
+
+  //Showing header
+  for(auto iter:raw_req_headers.headers())
+    {
+        std::cout << "key req: " << iter.first << ", value req: "
+                  << iter.second << std::endl;
+    }
 }
 
 // We use the same event handler function for HTTP and HTTPS connections
