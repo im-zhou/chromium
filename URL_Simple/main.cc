@@ -1,16 +1,3 @@
-// Copyright (c) 2020 Cesanta Software Limited
-// All rights reserved
-//
-// HTTP server example. This server serves both static and dynamic content.
-// It opens two ports: plain HTTP on port 8000 and HTTP on port 8443.
-// It implements the following endpoints:
-//    /api/stats - respond with free-formatted stats on current connections
-//    /api/f2/:id - wildcard example, respond with JSON string {"result": "URI"}
-//    any other URI serves static files from s_root_dir
-//
-// To enable SSL/TLS (using self-signed certificates in PEM files),
-//    1. make SSL=OPENSSL or make SSL=MBEDTLS
-//    2. curl -k https://127.0.0.1:8443
 
 #include <signal.h>
 #include <unistd.h>
@@ -31,6 +18,8 @@
 #include "net/base/upload_data_stream.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_response_info.h"
+#include "net/proxy_resolution/configured_proxy_resolution_service.h"
+#include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
 #include "net/url_request/redirect_info.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
@@ -163,6 +152,12 @@ std::unique_ptr<net::UploadDataStream> CreateSimpleUploadData(
   return net::ElementsUploadDataStream::CreateWithReader(std::move(reader), 0);
 }
 
+static std::unique_ptr<net::ConfiguredProxyResolutionService>
+  CreateFixedProxyResolutionService(const std::string& proxy) {
+    return net::ConfiguredProxyResolutionService::CreateFixedForTest(
+        proxy, TRAFFIC_ANNOTATION_FOR_TESTS);
+  }
+
 void provider(struct mg_http_message* hm, struct mg_connection* c) {
   char* x[0];
   base::CommandLine::Init(0, x);
@@ -176,6 +171,10 @@ void provider(struct mg_http_message* hm, struct mg_connection* c) {
 
   // Building a context
   auto context_builder = std::make_unique<net::URLRequestContextBuilder>();
+
+  //setting proxy
+  context_builder->set_proxy_resolution_service(
+      CreateFixedProxyResolutionService(/*give the proxy url here as string for eg: "localhost:[port]"*/""));
 
   context_builder->DisableHttpCache();
   auto ctx = context_builder->Build();
