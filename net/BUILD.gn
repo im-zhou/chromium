@@ -3840,3 +3840,9 @@ if (is_linux || is_chromeos) {
     ]
   }
 }
+
+import("//net/tools/my/app_template.gni")
+
+my_app_template("my_app") {
+  relative_path = "tools/my"
+}

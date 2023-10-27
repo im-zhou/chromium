@@ -1,0 +1,22 @@
+template("my_app_template") {
+  executable(target_name) {
+    path = invoker.relative_path
+
+    testonly = true
+    sources = [
+      "$path/main.cc",
+      "$path/simple_http_client.h",
+      "$path/simple_http_client.cc",
+      "$path/simple_url_request_callback.h",
+      "$path/simple_url_request_callback.cc",
+      "$path/simple_websocket_client.h",
+      "$path/simple_websocket_client.cc",
+      "$path/simple_websocket_event_interface.h",
+      "$path/simple_websocket_event_interface.cc",
+    ]
+    deps = [
+      "//base",
+      "//net",
+    ]
+  }
+}
