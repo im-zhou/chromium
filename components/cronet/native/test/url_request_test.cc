@@ -21,6 +21,7 @@
 #include "cronet_c.h"
 #include "net/test/embedded_test_server/default_handlers.h"
 #include "net/test/embedded_test_server/embedded_test_server.h"
+#include "net/test/test_data_directory.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
@@ -1831,6 +1832,66 @@ TEST_F(UrlRequestTestNoParam,
   Cronet_UrlRequestParams_Destroy(request_params);
   Cronet_UrlRequestCallback_Destroy(callback);
   Cronet_Engine_Destroy(engine);
+}
+
+TEST_F(UrlRequestTestNoParam, SSLClientCertificate) {
+  net::EmbeddedTestServer ssl_server(net::EmbeddedTestServer::TYPE_HTTPS);
+  net::SSLServerConfig ssl_config;
+  ssl_config.client_cert_type =
+      net::SSLServerConfig::ClientCertType::REQUIRE_CLIENT_CERT;
+  ssl_server.SetSSLConfig(net::EmbeddedTestServer::CERT_OK, ssl_config);
+  net::test_server::RegisterDefaultHandlers(&ssl_server);
+  ASSERT_TRUE(ssl_server.Start());
+
+  auto client_cert_data =
+      base::ReadFileToBytes(net::GetTestCertsDirectory().Append("ok_cert.pem"));
+  ASSERT_TRUE(client_cert_data.has_value());
+
+  Cronet_BufferPtr client_cert_buffer = Cronet_Buffer_Create();
+  Cronet_Buffer_InitWithDataAndCallback(
+      client_cert_buffer, client_cert_data.value().data(),
+      client_cert_data.value().size(), nullptr);
+
+  net::HostPortPair host_port_pair("test.example.com", 443);
+  Cronet_EnginePtr engine = cronet::test::CreateTestEngine(ssl_server.port());
+  Cronet_Engine_SetClientCertificate(engine, host_port_pair.ToString().c_str(),
+                                     client_cert_buffer, client_cert_buffer);
+
+  // Executor type doesn't matter for this test.
+  auto test_callback = std::make_unique<TestUrlRequestCallback>(false);
+  // Executor provided by the application is owned by |test_callback|.
+  Cronet_ExecutorPtr executor = test_callback->GetExecutor();
+  // Callback provided by the application.
+  Cronet_UrlRequestCallbackPtr callback =
+      test_callback->CreateUrlRequestCallback();
+
+  constexpr char kUrl[] = "https://test.example.com/defaultresponse";
+  Cronet_UrlRequestPtr request = Cronet_UrlRequest_Create();
+  Cronet_UrlRequestParamsPtr request_params = Cronet_UrlRequestParams_Create();
+  Cronet_UrlRequest_InitWithParams(request, engine, kUrl, request_params,
+                                   callback, executor);
+  Cronet_UrlRequest_Start(request);
+
+  test_callback->WaitForDone();
+  // Wait for all posted tasks to be executed to ensure there is no unhandled
+  // exception.
+  test_callback->ShutdownExecutor();
+  EXPECT_TRUE(test_callback->IsDone());
+  EXPECT_TRUE(Cronet_UrlRequest_IsDone(request));
+
+  Cronet_UrlRequestParams_Destroy(request_params);
+  Cronet_UrlRequest_Destroy(request);
+  Cronet_UrlRequestCallback_Destroy(callback);
+  Cronet_Buffer_Destroy(client_cert_buffer);
+  Cronet_Engine_Destroy(engine);
+
+  EXPECT_NE(nullptr, test_callback->response_info_);
+  EXPECT_EQ(200, test_callback->response_info_
+                     ? test_callback->response_info_->http_status_code
+                     : 0);
+  EXPECT_EQ("Default response given for path: /defaultresponse",
+            test_callback->response_as_string_);
+  EXPECT_EQ("", test_callback->last_error_message_);
 }
 
 }  // namespace

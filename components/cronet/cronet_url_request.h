@@ -63,6 +63,15 @@ class CronetURLRequest {
                                     const std::string& proxy_server,
                                     int64_t received_byte_count) = 0;
 
+    // Invoked when we receive an SSL CertificateRequest message for client
+    // authentication.  The delegate should call
+    // request->ContinueWithCertificate() with the client certificate the user
+    // selected and its private key, or request->ContinueWithCertificate(NULL,
+    // NULL)
+    // to continue the SSL handshake without a client certificate.
+    virtual void OnCertificateRequested(
+        net::SSLCertRequestInfo* cert_request_info) = 0;
+
     // Invoked when the final set of headers, after all redirects, is received.
     // Will only be invoked once for each request.
     //
@@ -180,6 +189,9 @@ class CronetURLRequest {
   // Follows redirect.
   void FollowDeferredRedirect();
 
+  // Continue with the request with the certificate if available
+  void FindCertificateAndContinue(net::SSLCertRequestInfo* cert_request_info);
+
   // Reads more data.
   bool ReadData(net::IOBuffer* buffer, int max_bytes);
 
@@ -236,6 +248,12 @@ class CronetURLRequest {
 
     // Follows redirect.
     void FollowDeferredRedirect();
+
+    // Continue with the request with the certificate.
+    // Pass NULL if the user doesn't have a client certificate.
+    void ContinueWithCertificate(
+        scoped_refptr<net::X509Certificate> client_cert,
+        scoped_refptr<net::SSLPrivateKey> client_private_key);
 
     // Reads more data.
     void ReadData(scoped_refptr<net::IOBuffer> read_buffer, int buffer_size);

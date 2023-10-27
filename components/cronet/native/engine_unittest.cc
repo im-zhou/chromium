@@ -249,5 +249,63 @@ TEST(EngineUnitTest, RemoveNullListener) {
   Cronet_Engine_Destroy(engine);
 }
 
+TEST(EngineUnitTest, AddNullClientCertificate) {
+  Cronet_EnginePtr engine = Cronet_Engine_Create();
+  Cronet_BufferPtr buffer = Cronet_Buffer_Create();
+
+  std::string msg =
+      "All parameters must be non-null. "
+      "host_port_pair: .* "
+      "client_cert_buffer: "
+      ".* private_key_buffer: .*"
+      "\\.";
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_SetClientCertificate(engine, nullptr, nullptr, nullptr),
+      msg);
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_SetClientCertificate(engine, nullptr, buffer, buffer), msg);
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_SetClientCertificate(engine, "localhost", nullptr, nullptr),
+      msg);
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_SetClientCertificate(engine, "localhost", buffer, nullptr),
+      msg);
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_SetClientCertificate(engine, "localhost", nullptr, buffer),
+      msg);
+
+  Cronet_Buffer_Destroy(buffer);
+  Cronet_Engine_Destroy(engine);
+}
+
+TEST(EngineUnitTest, AddClientCertificateBeforeStartDoesNothing) {
+  Cronet_EnginePtr engine = Cronet_Engine_Create();
+  Cronet_BufferPtr buffer = Cronet_Buffer_Create();
+
+  Cronet_Engine_SetClientCertificate(engine, "localhost", buffer, buffer);
+
+  EXPECT_FALSE(Cronet_Engine_ClearClientCertificate(engine, "localhost"));
+
+  Cronet_Buffer_Destroy(buffer);
+  Cronet_Engine_Destroy(engine);
+}
+
+TEST(EngineUnitTest, ClearNullOrNonexistentClientCertificate) {
+  Cronet_EnginePtr engine = Cronet_Engine_Create();
+
+  EXPECT_DCHECK_DEATH_WITH(
+      Cronet_Engine_ClearClientCertificate(engine, nullptr),
+      "host_port_pair must be non-null.");
+
+  EXPECT_FALSE(Cronet_Engine_ClearClientCertificate(engine, "localhost"));
+
+  Cronet_Engine_Destroy(engine);
+}
+
 }  // namespace
 }  // namespace cronet

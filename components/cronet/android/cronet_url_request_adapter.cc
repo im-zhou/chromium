@@ -219,6 +219,10 @@ void CronetURLRequestAdapter::OnReceivedRedirect(
       ConvertUTF8ToJavaString(env, proxy_server), received_byte_count);
 }
 
+void CronetURLRequestAdapter::OnCertificateRequested(net::SSLCertRequestInfo* cert_request_info) {
+  request_->FindCertificateAndContinue(cert_request_info);
+}
+
 void CronetURLRequestAdapter::OnResponseStarted(
     int http_status_code,
     const std::string& http_status_text,

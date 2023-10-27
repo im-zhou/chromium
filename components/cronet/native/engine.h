@@ -49,6 +49,10 @@ class Cronet_EngineImpl : public Cronet_Engine {
       Cronet_ExecutorPtr executor) override;
   void RemoveRequestFinishedListener(
       Cronet_RequestFinishedInfoListenerPtr listener) override;
+  void SetClientCertificate(Cronet_String host_port_pair,
+                            Cronet_BufferPtr client_cert_buffer,
+                            Cronet_BufferPtr private_key_buffer) override;
+  bool ClearClientCertificate(Cronet_String host_port_pair) override;
 
   // Check |result| and aborts if result is not SUCCESS and enableCheckResult
   // is true.

@@ -235,6 +235,8 @@ class Cronet_EngineTest : public ::testing::Test {
   bool GetDefaultUserAgent_called_ = false;
   bool AddRequestFinishedListener_called_ = false;
   bool RemoveRequestFinishedListener_called_ = false;
+  bool SetClientCertificate_called_ = false;
+  bool ClearClientCertificate_called_ = false;
 };
 
 namespace {
@@ -313,6 +315,27 @@ void TestCronet_Engine_RemoveRequestFinishedListener(
   CHECK(test);
   test->RemoveRequestFinishedListener_called_ = true;
 }
+void TestCronet_Engine_SetClientCertificate(
+    Cronet_EnginePtr self,
+    Cronet_String host_port_pair,
+    Cronet_BufferPtr client_cert_buffer,
+    Cronet_BufferPtr private_key_buffer) {
+  CHECK(self);
+  Cronet_ClientContext client_context = Cronet_Engine_GetClientContext(self);
+  auto* test = static_cast<Cronet_EngineTest*>(client_context);
+  CHECK(test);
+  test->SetClientCertificate_called_ = true;
+}
+bool TestCronet_Engine_ClearClientCertificate(Cronet_EnginePtr self,
+                                              Cronet_String host_port_pair) {
+  CHECK(self);
+  Cronet_ClientContext client_context = Cronet_Engine_GetClientContext(self);
+  auto* test = static_cast<Cronet_EngineTest*>(client_context);
+  CHECK(test);
+  test->ClearClientCertificate_called_ = true;
+
+  return static_cast<bool>(0);
+}
 }  // namespace
 
 // Test that Cronet_Engine stub forwards function calls as expected.
@@ -322,7 +345,9 @@ TEST_F(Cronet_EngineTest, TestCreate) {
       TestCronet_Engine_StopNetLog, TestCronet_Engine_Shutdown,
       TestCronet_Engine_GetVersionString, TestCronet_Engine_GetDefaultUserAgent,
       TestCronet_Engine_AddRequestFinishedListener,
-      TestCronet_Engine_RemoveRequestFinishedListener);
+      TestCronet_Engine_RemoveRequestFinishedListener,
+      TestCronet_Engine_SetClientCertificate,
+      TestCronet_Engine_ClearClientCertificate);
   CHECK(test);
   Cronet_Engine_SetClientContext(test, this);
   CHECK(!StartWithParams_called_);
@@ -337,6 +362,8 @@ TEST_F(Cronet_EngineTest, TestCreate) {
   CHECK(GetDefaultUserAgent_called_);
   CHECK(!AddRequestFinishedListener_called_);
   CHECK(!RemoveRequestFinishedListener_called_);
+  CHECK(!SetClientCertificate_called_);
+  CHECK(!ClearClientCertificate_called_);
 
   Cronet_Engine_Destroy(test);
 }

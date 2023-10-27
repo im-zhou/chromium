@@ -332,6 +332,14 @@ CRONET_EXPORT
 void Cronet_Engine_RemoveRequestFinishedListener(
     Cronet_EnginePtr self,
     Cronet_RequestFinishedInfoListenerPtr listener);
+CRONET_EXPORT
+void Cronet_Engine_SetClientCertificate(Cronet_EnginePtr self,
+                                        Cronet_String host_port_pair,
+                                        Cronet_BufferPtr client_cert_buffer,
+                                        Cronet_BufferPtr private_key_buffer);
+CRONET_EXPORT
+bool Cronet_Engine_ClearClientCertificate(Cronet_EnginePtr self,
+                                          Cronet_String host_port_pair);
 // Concrete interface Cronet_Engine is implemented by Cronet.
 // The app can implement these for testing / mocking.
 typedef Cronet_RESULT (*Cronet_Engine_StartWithParamsFunc)(
@@ -353,6 +361,14 @@ typedef void (*Cronet_Engine_AddRequestFinishedListenerFunc)(
 typedef void (*Cronet_Engine_RemoveRequestFinishedListenerFunc)(
     Cronet_EnginePtr self,
     Cronet_RequestFinishedInfoListenerPtr listener);
+typedef void (*Cronet_Engine_SetClientCertificateFunc)(
+    Cronet_EnginePtr self,
+    Cronet_String host_port_pair,
+    Cronet_BufferPtr client_cert_buffer,
+    Cronet_BufferPtr private_key_buffer);
+typedef bool (*Cronet_Engine_ClearClientCertificateFunc)(
+    Cronet_EnginePtr self,
+    Cronet_String host_port_pair);
 // Concrete interface Cronet_Engine is implemented by Cronet.
 // The app can use this for testing / mocking.
 CRONET_EXPORT Cronet_EnginePtr Cronet_Engine_CreateWith(
@@ -364,7 +380,9 @@ CRONET_EXPORT Cronet_EnginePtr Cronet_Engine_CreateWith(
     Cronet_Engine_GetDefaultUserAgentFunc GetDefaultUserAgentFunc,
     Cronet_Engine_AddRequestFinishedListenerFunc AddRequestFinishedListenerFunc,
     Cronet_Engine_RemoveRequestFinishedListenerFunc
-        RemoveRequestFinishedListenerFunc);
+        RemoveRequestFinishedListenerFunc,
+    Cronet_Engine_SetClientCertificateFunc SetClientCertificateFunc,
+    Cronet_Engine_ClearClientCertificateFunc ClearClientCertificateFunc);
 
 ///////////////////////
 // Abstract interface Cronet_UrlRequestStatusListener is implemented by the app.
@@ -837,6 +855,9 @@ CRONET_EXPORT
 void Cronet_EngineParams_experimental_options_set(
     Cronet_EngineParamsPtr self,
     const Cronet_String experimental_options);
+CRONET_EXPORT
+void Cronet_EngineParams_proxy_server_set(Cronet_EngineParamsPtr self,
+                                          const Cronet_String proxy_server);
 // Cronet_EngineParams getters.
 CRONET_EXPORT
 bool Cronet_EngineParams_enable_check_result_get(
@@ -887,6 +908,9 @@ double Cronet_EngineParams_network_thread_priority_get(
     const Cronet_EngineParamsPtr self);
 CRONET_EXPORT
 Cronet_String Cronet_EngineParams_experimental_options_get(
+    const Cronet_EngineParamsPtr self);
+CRONET_EXPORT
+Cronet_String Cronet_EngineParams_proxy_server_get(
     const Cronet_EngineParamsPtr self);
 
 ///////////////////////

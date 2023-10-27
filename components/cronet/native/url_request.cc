@@ -265,6 +265,8 @@ class Cronet_UrlRequestImpl::NetworkTasks : public CronetURLRequest::Callback {
                           const std::string& negotiated_protocol,
                           const std::string& proxy_server,
                           int64_t received_byte_count) override;
+  void OnCertificateRequested(
+      net::SSLCertRequestInfo* cert_request_info) override;
   void OnResponseStarted(int http_status_code,
                          const std::string& http_status_text,
                          const net::HttpResponseHeaders* headers,
@@ -697,6 +699,15 @@ void Cronet_UrlRequestImpl::NetworkTasks::OnReceivedRedirect(
   url_request_->PostTaskToExecutor(
       base::BindOnce(&Cronet_UrlRequestImpl::InvokeCallbackOnRedirectReceived,
                      base::Unretained(url_request_), new_location));
+}
+
+void Cronet_UrlRequestImpl::NetworkTasks::OnCertificateRequested(
+    net::SSLCertRequestInfo* cert_request_info) {
+  DCHECK_CALLED_ON_VALID_THREAD(network_thread_checker_);
+  base::AutoLock lock(url_request_->lock_);
+  if (url_request_->request_) {
+    url_request_->request_->FindCertificateAndContinue(cert_request_info);
+  }
 }
 
 void Cronet_UrlRequestImpl::NetworkTasks::OnResponseStarted(

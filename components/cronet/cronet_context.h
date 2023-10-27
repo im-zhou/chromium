@@ -27,6 +27,7 @@
 #include "net/nqe/network_quality_estimator.h"
 #include "net/nqe/network_quality_observation_source.h"
 #include "net/nqe/rtt_throughput_estimates_observer.h"
+#include "net/ssl/ssl_client_auth_cache.h"
 
 class PrefService;
 
@@ -113,7 +114,7 @@ class CronetContext {
   virtual ~CronetContext();
 
   // Called on init thread to initialize URLRequestContext.
-  void InitRequestContextOnInitThread();
+  void InitRequestContextOnInitThread(std::string proxy_server = "");
 
   // Posts a task that might depend on the context being initialized
   // to the network thread.
@@ -158,6 +159,30 @@ class CronetContext {
   // the network thread while destroying a CronetURLRequest as that might
   // mark a URLRequestContext as eligible for destruction.
   void MaybeDestroyURLRequestContext(net::handles::NetworkHandle network);
+
+  // Looks up the client certificate preference for |server|. If one is found,
+  // returns true and sets |client_cert| and |private_key| to the certificate
+  // and key. Note these may be null if the preference is to continue with no
+  // client certificate. Returns false if no preferences are configured,
+  // which means client certificate requests should be reported as
+  // ERR_SSL_CLIENT_AUTH_CERT_NEEDED.
+  bool GetClientCertificate(const net::HostPortPair& server,
+                            scoped_refptr<net::X509Certificate>* client_cert,
+                            scoped_refptr<net::SSLPrivateKey>* private_key);
+
+  // Configures all subsequent connections to |server| to authenticate with
+  // |client_cert| and |private_key| when requested. If there is already a
+  // client certificate for |server|, it will be overwritten. |client_cert| and
+  // |private_key| may be null to indicate that no client certificate should be
+  // sent to |server|.
+  void SetClientCertificate(const net::HostPortPair& server,
+                            scoped_refptr<net::X509Certificate> client_cert,
+                            scoped_refptr<net::SSLPrivateKey> private_key);
+
+  // Clears a client certificate preference for |server| set by
+  // SetClientCertificate(). Returns true if one was removed and false
+  // otherwise.
+  bool ClearClientCertificate(const net::HostPortPair& server);
 
   // Default net::LOAD flags used to create requests.
   int default_load_flags() const;
@@ -386,6 +411,8 @@ class CronetContext {
 
   // Task runner that runs network tasks.
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
+
+  net::SSLClientAuthCache ssl_client_auth_cache_;
 };
 
 }  // namespace cronet

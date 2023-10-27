@@ -329,6 +329,12 @@ void Cronet_EngineParams_experimental_options_set(
   self->experimental_options = experimental_options;
 }
 
+void Cronet_EngineParams_proxy_server_set(Cronet_EngineParamsPtr self,
+                                          const Cronet_String proxy_server) {
+  DCHECK(self);
+  self->proxy_server = proxy_server;
+}
+
 // Struct Cronet_EngineParams getters.
 bool Cronet_EngineParams_enable_check_result_get(
     const Cronet_EngineParamsPtr self) {
@@ -429,6 +435,12 @@ Cronet_String Cronet_EngineParams_experimental_options_get(
     const Cronet_EngineParamsPtr self) {
   DCHECK(self);
   return self->experimental_options.c_str();
+}
+
+Cronet_String Cronet_EngineParams_proxy_server_get(
+    const Cronet_EngineParamsPtr self) {
+  DCHECK(self);
+  return self->proxy_server.c_str();
 }
 
 // Struct Cronet_HttpHeader.

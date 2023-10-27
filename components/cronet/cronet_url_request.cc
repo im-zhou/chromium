@@ -26,6 +26,7 @@
 #include "net/http/http_response_headers.h"
 #include "net/http/http_status_code.h"
 #include "net/http/http_util.h"
+#include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_info.h"
 #include "net/ssl/ssl_private_key.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_packets.h"
@@ -147,6 +148,19 @@ void CronetURLRequest::FollowDeferredRedirect() {
                      base::Unretained(&network_tasks_)));
 }
 
+void CronetURLRequest::FindCertificateAndContinue(
+    net::SSLCertRequestInfo* cert_request_info) {
+  scoped_refptr<net::X509Certificate> client_cert;
+  scoped_refptr<net::SSLPrivateKey> client_private_key;
+  context_->GetClientCertificate(cert_request_info->host_and_port, &client_cert,
+                                 &client_private_key);
+  context_->PostTaskToNetworkThread(
+      FROM_HERE,
+      base::BindOnce(&CronetURLRequest::NetworkTasks::ContinueWithCertificate,
+                     base::Unretained(&network_tasks_), std::move(client_cert),
+                     std::move(client_private_key)));
+}
+
 bool CronetURLRequest::ReadData(net::IOBuffer* raw_read_buffer, int max_size) {
   // TODO(https://crbug.com/1335423): Change to DCHECK() or remove after bug
   // is fixed.
@@ -231,8 +245,7 @@ void CronetURLRequest::NetworkTasks::OnCertificateRequested(
     net::URLRequest* request,
     net::SSLCertRequestInfo* cert_request_info) {
   DCHECK_CALLED_ON_VALID_THREAD(network_thread_checker_);
-  // Cronet does not support client certificates.
-  request->ContinueWithCertificate(nullptr, nullptr);
+  callback_->OnCertificateRequested(cert_request_info);
 }
 
 void CronetURLRequest::NetworkTasks::OnSSLCertificateError(
@@ -339,6 +352,13 @@ void CronetURLRequest::NetworkTasks::FollowDeferredRedirect() {
   url_request_->FollowDeferredRedirect(
       absl::nullopt /* removed_request_headers */,
       absl::nullopt /* modified_request_headers */);
+}
+
+void CronetURLRequest::NetworkTasks::ContinueWithCertificate(
+    scoped_refptr<net::X509Certificate> client_cert,
+    scoped_refptr<net::SSLPrivateKey> client_private_key) {
+  DCHECK_CALLED_ON_VALID_THREAD(network_thread_checker_);
+  url_request_->ContinueWithCertificate(client_cert, client_private_key);
 }
 
 void CronetURLRequest::NetworkTasks::ReadData(

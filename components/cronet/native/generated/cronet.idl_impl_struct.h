@@ -96,6 +96,7 @@ struct Cronet_EngineParams {
   bool enable_public_key_pinning_bypass_for_local_trust_anchors = true;
   double network_thread_priority = std::numeric_limits<double>::quiet_NaN();
   std::string experimental_options;
+  std::string proxy_server;
 };
 
 // Struct Cronet_HttpHeader.

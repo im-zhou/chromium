@@ -113,6 +113,7 @@ class CronetURLRequestAdapter : public CronetURLRequest::Callback {
                           const std::string& negotiated_protocol,
                           const std::string& proxy_server,
                           int64_t received_byte_count) override;
+  void OnCertificateRequested(net::SSLCertRequestInfo* cert_request_info) override;
   void OnResponseStarted(int http_status_code,
                          const std::string& http_status_text,
                          const net::HttpResponseHeaders* headers,
