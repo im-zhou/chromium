@@ -818,6 +818,11 @@ void URLRequestContextConfig::ConfigureURLRequestContextBuilder(
 
   if (mock_cert_verifier)
     context_builder->SetCertVerifier(std::move(mock_cert_verifier));
+  else {
+    cert_fetcher = base::MakeRefCounted<net::CertNetFetcherURLRequest>();
+    context_builder->SetCertVerifier(
+        net::CertVerifier::CreateDefault(cert_fetcher.get()));
+  }
   // TODO(mef): Use |config| to set cookies.
 }
 

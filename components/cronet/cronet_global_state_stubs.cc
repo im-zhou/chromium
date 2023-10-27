@@ -14,6 +14,7 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/proxy_resolution/proxy_config_service.h"
+#include "net/proxy_resolution/proxy_config_service_fixed.h"
 
 // This file provides minimal "stub" implementations of the Cronet global-state
 // functions for the native library build, sufficient to have cronet_tests and
@@ -63,9 +64,16 @@ void PostTaskToInitThread(const base::Location& posted_from,
 }
 
 std::unique_ptr<net::ProxyConfigService> CreateProxyConfigService(
+    const std::string proxy_server,
     const scoped_refptr<base::SequencedTaskRunner>& io_task_runner) {
-  return net::ProxyConfigService::CreateSystemProxyConfigService(
-      io_task_runner);
+  if (proxy_server.empty()) {
+      return net::ProxyConfigService::CreateSystemProxyConfigService(io_task_runner);
+  } else {
+      net::ProxyConfig proxy_config;
+      proxy_config.proxy_rules().ParseFromString(proxy_server);
+      return std::make_unique<net::ProxyConfigServiceFixed>(net::ProxyConfigWithAnnotation(proxy_config,
+                                                            MISSING_TRAFFIC_ANNOTATION));
+  }
 }
 
 std::unique_ptr<net::ProxyResolutionService> CreateProxyResolutionService(

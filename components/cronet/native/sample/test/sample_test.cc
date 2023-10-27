@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -38,10 +39,23 @@ TEST(SampleTest, TestConnectionRefused) {
   // Expect "cronet_sample" app to be located in same directory as the test.
   std::string cronet_sample_path = DirName(s_test_app_path) + "cronet_sample";
   std::string url = "http://localhost:99999";
-  std::string sample_out = RunCommand(cronet_sample_path + " " + url);
+  std::string sample_out = RunCommand(cronet_sample_path + " --url " + url);
 
   // Expect cronet sample to run and fail with net::ERR_INVALID_URL.
   EXPECT_NE(std::string::npos, sample_out.find("net::ERR_INVALID_URL"));
+}
+
+// Test that cronet_sample runs and gets proxy connection failed.
+TEST(SampleTest, TestProxyConnectionFailed) {
+  // Expect "cronet_sample" app to be located in same directory as the test.
+  std::string cronet_sample_path = DirName(s_test_app_path) + "cronet_sample";
+  std::string proxy = "http://proxy.localhost";
+  std::string sample_out = RunCommand(cronet_sample_path + " --proxy " + proxy);
+
+  // Expect cronet sample to run and fail with either
+  // net::ERR_PROXY_CONNECTION_FAILED or net::ERR_TUNNEL_CONNECTION_FAILED.
+  std::regex re("net::ERR_(?:PROXY|TUNNEL)_CONNECTION_FAILED");
+  EXPECT_TRUE(std::regex_search(sample_out, re));
 }
 
 }  // namespace

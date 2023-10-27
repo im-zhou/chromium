@@ -38,6 +38,7 @@ void EnsureInitialized();
 // to EnsureInitialized() has returned.
 // On Android, this must be called on the JNI thread.
 std::unique_ptr<net::ProxyConfigService> CreateProxyConfigService(
+    const std::string proxy_server,
     const scoped_refptr<base::SequencedTaskRunner>& io_task_runner);
 
 // Creates a proxy resolution service appropriate for this platform that fetches

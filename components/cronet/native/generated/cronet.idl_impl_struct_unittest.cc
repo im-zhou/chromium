@@ -157,6 +157,10 @@ TEST_F(CronetStructTest, TestCronet_EngineParams) {
       second, Cronet_EngineParams_experimental_options_get(first));
   EXPECT_STREQ(Cronet_EngineParams_experimental_options_get(first),
                Cronet_EngineParams_experimental_options_get(second));
+  Cronet_EngineParams_proxy_server_set(
+      second, Cronet_EngineParams_proxy_server_get(first));
+  EXPECT_STREQ(Cronet_EngineParams_proxy_server_get(first),
+               Cronet_EngineParams_proxy_server_get(second));
   Cronet_EngineParams_Destroy(first);
   Cronet_EngineParams_Destroy(second);
 }

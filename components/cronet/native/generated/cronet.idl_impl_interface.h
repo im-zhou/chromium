@@ -7,6 +7,9 @@
 #ifndef COMPONENTS_CRONET_NATIVE_GENERATED_CRONET_IDL_IMPL_INTERFACE_H_
 #define COMPONENTS_CRONET_NATIVE_GENERATED_CRONET_IDL_IMPL_INTERFACE_H_
 
+#include <string>
+#include <vector>
+
 #include "components/cronet/native/generated/cronet.idl_c.h"
 
 struct Cronet_Buffer {
@@ -114,6 +117,10 @@ struct Cronet_Engine {
       Cronet_ExecutorPtr executor) = 0;
   virtual void RemoveRequestFinishedListener(
       Cronet_RequestFinishedInfoListenerPtr listener) = 0;
+  virtual void SetClientCertificate(Cronet_String host_port_pair,
+                                    Cronet_BufferPtr client_cert_buffer,
+                                    Cronet_BufferPtr private_key_buffer) = 0;
+  virtual bool ClearClientCertificate(Cronet_String host_port_pair) = 0;
 
  private:
   Cronet_ClientContext client_context_ = nullptr;

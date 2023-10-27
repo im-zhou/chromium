@@ -10,6 +10,7 @@
 #include "base/run_loop.h"
 #include "components/cronet/native/test/test_util.h"
 #include "net/cert/mock_cert_verifier.h"
+#include "net/test/test_data_directory.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace {
@@ -222,6 +223,33 @@ TEST_F(EngineTest, StartNetLogToFile) {
       engine, net_log_file.AsUTF8Unsafe().c_str(), true));
   Cronet_Engine_StopNetLog(engine);
   Cronet_Engine_Destroy(engine);
+}
+
+TEST_F(EngineTest, AddClientCertificateAfterStart) {
+  Cronet_EnginePtr engine = Cronet_Engine_Create();
+  Cronet_EngineParamsPtr engine_params = Cronet_EngineParams_Create();
+  Cronet_BufferPtr client_cert_buffer = Cronet_Buffer_Create();
+
+  EXPECT_EQ(Cronet_RESULT_SUCCESS,
+            Cronet_Engine_StartWithParams(engine, engine_params));
+
+  auto client_cert_data =
+      base::ReadFileToBytes(net::GetTestCertsDirectory().Append("ok_cert.pem"));
+  ASSERT_TRUE(client_cert_data.has_value());
+
+  Cronet_Buffer_InitWithDataAndCallback(
+      client_cert_buffer, client_cert_data.value().data(),
+      client_cert_data.value().size(), nullptr);
+
+  Cronet_Engine_SetClientCertificate(engine, "127.0.0.1", client_cert_buffer,
+                                     client_cert_buffer);
+
+  EXPECT_TRUE(Cronet_Engine_ClearClientCertificate(engine, "127.0.0.1"));
+  EXPECT_FALSE(Cronet_Engine_ClearClientCertificate(engine, "127.0.0.1"));
+
+  Cronet_Buffer_Destroy(client_cert_buffer);
+  Cronet_Engine_Destroy(engine);
+  Cronet_EngineParams_Destroy(engine_params);
 }
 
 }  // namespace

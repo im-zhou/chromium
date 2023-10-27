@@ -239,6 +239,10 @@ CronetContext::NetworkTasks::~NetworkTasks() {
   DCHECK_CALLED_ON_VALID_THREAD(network_thread_checker_);
   callback_->OnDestroyNetworkThread();
 
+  if (context_config_->cert_fetcher) {
+    context_config_->cert_fetcher.get()->Shutdown();
+  }
+
   if (cronet_prefs_manager_)
     cronet_prefs_manager_->PrepareForShutdown();
 
@@ -253,12 +257,13 @@ CronetContext::NetworkTasks::~NetworkTasks() {
     net::NetworkChangeNotifier::RemoveNetworkObserver(this);
 }
 
-void CronetContext::InitRequestContextOnInitThread() {
+void CronetContext::InitRequestContextOnInitThread(
+    const std::string proxy_server) {
   DCHECK(OnInitThread());
   // Cannot create this inside Initialize because Android requires this to be
   // created on the JNI thread.
   auto proxy_config_service =
-      cronet::CreateProxyConfigService(GetNetworkTaskRunner());
+      cronet::CreateProxyConfigService(proxy_server, GetNetworkTaskRunner());
   g_net_log.Get().EnsureInitializedOnInitThread();
   GetNetworkTaskRunner()->PostTask(
       FROM_HERE,
@@ -468,6 +473,10 @@ void CronetContext::NetworkTasks::SetSharedURLRequestContextConfig(
   if (context_config_->enable_quic) {
     for (const auto& quic_hint : context_config_->quic_hints)
       SetQuicHint(context, quic_hint.get());
+  }
+
+  if (context_config_->cert_fetcher) {
+    context_config_->cert_fetcher.get()->SetURLRequestContext(context);
   }
 
   // Iterate through PKP configuration for every host.
@@ -702,6 +711,25 @@ void CronetContext::MaybeDestroyURLRequestContext(
     net::handles::NetworkHandle network) {
   DCHECK(IsOnNetworkThread());
   network_tasks_->MaybeDestroyURLRequestContext(network);
+}
+
+bool CronetContext::GetClientCertificate(
+    const net::HostPortPair& server,
+    scoped_refptr<net::X509Certificate>* client_cert,
+    scoped_refptr<net::SSLPrivateKey>* private_key) {
+  return ssl_client_auth_cache_.Lookup(server, client_cert, private_key);
+}
+
+void CronetContext::SetClientCertificate(
+    const net::HostPortPair& server,
+    scoped_refptr<net::X509Certificate> client_cert,
+    scoped_refptr<net::SSLPrivateKey> private_key) {
+  ssl_client_auth_cache_.Add(server, std::move(client_cert),
+                             std::move(private_key));
+}
+
+bool CronetContext::ClearClientCertificate(const net::HostPortPair& server) {
+  return ssl_client_auth_cache_.Remove(server);
 }
 
 int CronetContext::default_load_flags() const {

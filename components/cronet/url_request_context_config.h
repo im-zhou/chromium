@@ -10,11 +10,13 @@
 #include <string>
 #include <vector>
 
+#include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
 #include "base/values.h"
 #include "net/base/hash_value.h"
 #include "net/base/network_handle.h"
 #include "net/cert/cert_verifier.h"
+#include "net/cert_net/cert_net_fetcher_url_request.h"
 #include "net/nqe/effective_connection_type.h"
 #include "url/origin.h"
 
@@ -129,6 +131,8 @@ struct URLRequestContextConfig {
 
   // Certificate verifier for testing.
   std::unique_ptr<net::CertVerifier> mock_cert_verifier;
+
+  scoped_refptr<net::CertNetFetcherURLRequest> cert_fetcher;
 
   // Enable Network Quality Estimator (NQE).
   const bool enable_network_quality_estimator;

@@ -264,6 +264,8 @@ class Cronet_UrlRequestImpl::NetworkTasks : public CronetURLRequest::Callback {
                           const std::string& negotiated_protocol,
                           const std::string& proxy_server,
                           int64_t received_byte_count) override;
+  void OnCertificateRequested(
+      net::SSLCertRequestInfo* cert_request_info) override;
   void OnResponseStarted(int http_status_code,
                          const std::string& http_status_text,
                          const net::HttpResponseHeaders* headers,
@@ -407,8 +409,6 @@ Cronet_RESULT Cronet_UrlRequestImpl::InitWithParams(
   for (const auto& request_header : params->request_headers) {
     if (request_header.name.empty())
       return engine_->CheckResult(Cronet_RESULT_NULL_POINTER_HEADER_NAME);
-    if (request_header.value.empty())
-      return engine_->CheckResult(Cronet_RESULT_NULL_POINTER_HEADER_VALUE);
     if (!request_->AddRequestHeader(request_header.name,
                                     request_header.value)) {
       return engine_->CheckResult(
@@ -703,6 +703,15 @@ void Cronet_UrlRequestImpl::NetworkTasks::OnReceivedRedirect(
   url_request_->PostTaskToExecutor(
       base::BindOnce(&Cronet_UrlRequestImpl::InvokeCallbackOnRedirectReceived,
                      base::Unretained(url_request_), new_location));
+}
+
+void Cronet_UrlRequestImpl::NetworkTasks::OnCertificateRequested(
+    net::SSLCertRequestInfo* cert_request_info) {
+  DCHECK_CALLED_ON_VALID_THREAD(network_thread_checker_);
+  base::AutoLock lock(url_request_->lock_);
+  if (url_request_->request_) {
+    url_request_->request_->FindCertificateAndContinue(cert_request_info);
+  }
 }
 
 void Cronet_UrlRequestImpl::NetworkTasks::OnResponseStarted(

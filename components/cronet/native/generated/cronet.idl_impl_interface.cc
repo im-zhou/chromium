@@ -309,6 +309,21 @@ void Cronet_Engine_RemoveRequestFinishedListener(
   self->RemoveRequestFinishedListener(listener);
 }
 
+void Cronet_Engine_SetClientCertificate(Cronet_EnginePtr self,
+                                        Cronet_String host_port_pair,
+                                        Cronet_BufferPtr client_cert_buffer,
+                                        Cronet_BufferPtr private_key_buffer) {
+  DCHECK(self);
+  self->SetClientCertificate(host_port_pair, client_cert_buffer,
+                             private_key_buffer);
+}
+
+bool Cronet_Engine_ClearClientCertificate(Cronet_EnginePtr self,
+                                          Cronet_String host_port_pair) {
+  DCHECK(self);
+  return self->ClearClientCertificate(host_port_pair);
+}
+
 // Implementation of Cronet_Engine that forwards calls to C functions
 // implemented by the app.
 class Cronet_EngineStub : public Cronet_Engine {
@@ -323,7 +338,9 @@ class Cronet_EngineStub : public Cronet_Engine {
       Cronet_Engine_AddRequestFinishedListenerFunc
           AddRequestFinishedListenerFunc,
       Cronet_Engine_RemoveRequestFinishedListenerFunc
-          RemoveRequestFinishedListenerFunc)
+          RemoveRequestFinishedListenerFunc,
+      Cronet_Engine_SetClientCertificateFunc SetClientCertificateFunc,
+      Cronet_Engine_ClearClientCertificateFunc ClearClientCertificateFunc)
       : StartWithParamsFunc_(StartWithParamsFunc),
         StartNetLogToFileFunc_(StartNetLogToFileFunc),
         StopNetLogFunc_(StopNetLogFunc),
@@ -331,7 +348,9 @@ class Cronet_EngineStub : public Cronet_Engine {
         GetVersionStringFunc_(GetVersionStringFunc),
         GetDefaultUserAgentFunc_(GetDefaultUserAgentFunc),
         AddRequestFinishedListenerFunc_(AddRequestFinishedListenerFunc),
-        RemoveRequestFinishedListenerFunc_(RemoveRequestFinishedListenerFunc) {}
+        RemoveRequestFinishedListenerFunc_(RemoveRequestFinishedListenerFunc),
+        SetClientCertificateFunc_(SetClientCertificateFunc),
+        ClearClientCertificateFunc_(ClearClientCertificateFunc) {}
 
   Cronet_EngineStub(const Cronet_EngineStub&) = delete;
   Cronet_EngineStub& operator=(const Cronet_EngineStub&) = delete;
@@ -370,6 +389,17 @@ class Cronet_EngineStub : public Cronet_Engine {
     RemoveRequestFinishedListenerFunc_(this, listener);
   }
 
+  void SetClientCertificate(Cronet_String host_port_pair,
+                            Cronet_BufferPtr client_cert_buffer,
+                            Cronet_BufferPtr private_key_buffer) override {
+    SetClientCertificateFunc_(this, host_port_pair, client_cert_buffer,
+                              private_key_buffer);
+  }
+
+  bool ClearClientCertificate(Cronet_String host_port_pair) override {
+    return ClearClientCertificateFunc_(this, host_port_pair);
+  }
+
  private:
   const Cronet_Engine_StartWithParamsFunc StartWithParamsFunc_;
   const Cronet_Engine_StartNetLogToFileFunc StartNetLogToFileFunc_;
@@ -381,6 +411,8 @@ class Cronet_EngineStub : public Cronet_Engine {
       AddRequestFinishedListenerFunc_;
   const Cronet_Engine_RemoveRequestFinishedListenerFunc
       RemoveRequestFinishedListenerFunc_;
+  const Cronet_Engine_SetClientCertificateFunc SetClientCertificateFunc_;
+  const Cronet_Engine_ClearClientCertificateFunc ClearClientCertificateFunc_;
 };
 
 Cronet_EnginePtr Cronet_Engine_CreateWith(
@@ -392,11 +424,14 @@ Cronet_EnginePtr Cronet_Engine_CreateWith(
     Cronet_Engine_GetDefaultUserAgentFunc GetDefaultUserAgentFunc,
     Cronet_Engine_AddRequestFinishedListenerFunc AddRequestFinishedListenerFunc,
     Cronet_Engine_RemoveRequestFinishedListenerFunc
-        RemoveRequestFinishedListenerFunc) {
+        RemoveRequestFinishedListenerFunc,
+    Cronet_Engine_SetClientCertificateFunc SetClientCertificateFunc,
+    Cronet_Engine_ClearClientCertificateFunc ClearClientCertificateFunc) {
   return new Cronet_EngineStub(
       StartWithParamsFunc, StartNetLogToFileFunc, StopNetLogFunc, ShutdownFunc,
       GetVersionStringFunc, GetDefaultUserAgentFunc,
-      AddRequestFinishedListenerFunc, RemoveRequestFinishedListenerFunc);
+      AddRequestFinishedListenerFunc, RemoveRequestFinishedListenerFunc,
+      SetClientCertificateFunc, ClearClientCertificateFunc);
 }
 
 // C functions of Cronet_UrlRequestStatusListener that forward calls to C++

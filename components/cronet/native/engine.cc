@@ -11,6 +11,7 @@
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/no_destructor.h"
@@ -19,11 +20,13 @@
 #include "components/cronet/cronet_global_state.h"
 #include "components/cronet/native/generated/cronet.idl_impl_struct.h"
 #include "components/cronet/native/include/cronet_c.h"
+#include "components/cronet/native/io_buffer_with_cronet_buffer.h"
 #include "components/cronet/native/runnables.h"
 #include "components/cronet/url_request_context_config.h"
 #include "components/cronet/version.h"
 #include "components/grpc_support/include/bidirectional_stream_c.h"
 #include "net/base/hash_value.h"
+#include "net/ssl/openssl_private_key.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 #include "net/url_request/url_request_context_getter.h"
@@ -94,7 +97,13 @@ Cronet_EngineImpl::Cronet_EngineImpl()
     : init_completed_(base::WaitableEvent::ResetPolicy::MANUAL,
                       base::WaitableEvent::InitialState::NOT_SIGNALED),
       stop_netlog_completed_(base::WaitableEvent::ResetPolicy::MANUAL,
-                             base::WaitableEvent::InitialState::NOT_SIGNALED) {}
+                             base::WaitableEvent::InitialState::NOT_SIGNALED) {
+  // Cronet doesn't currently provide any way of using a custom command line
+  // (see https://crbug.com/1488393). For now, initialize an empty command line
+  // so that code attempting to use the command line doesn't crash.
+  static const char* const argv[] = {"cronet", nullptr};
+  base::CommandLine::Init(sizeof(argv) / sizeof(*argv) - 1, argv);
+}
 
 Cronet_EngineImpl::~Cronet_EngineImpl() {
   Shutdown();
@@ -202,7 +211,8 @@ Cronet_RESULT Cronet_EngineImpl::StartWithParams(
   // Initialize context on the init thread.
   cronet::PostTaskToInitThread(
       FROM_HERE, base::BindOnce(&CronetContext::InitRequestContextOnInitThread,
-                                base::Unretained(context_.get())));
+                                base::Unretained(context_.get()),
+                                std::move(params->proxy_server)));
   return CheckResult(Cronet_RESULT_SUCCESS);
 }
 
@@ -289,6 +299,60 @@ void Cronet_EngineImpl::RemoveRequestFinishedListener(
     LOG(DFATAL) << "Asked to erase non-existent RequestFinishedInfoListener "
                 << listener << ".";
   }
+}
+
+void Cronet_EngineImpl::SetClientCertificate(
+    Cronet_String host_port_pair,
+    Cronet_BufferPtr client_cert_buffer,
+    Cronet_BufferPtr private_key_buffer) {
+  if (host_port_pair == nullptr || client_cert_buffer == nullptr ||
+      private_key_buffer == nullptr) {
+    LOG(DFATAL) << "All parameters must be non-null. host_port_pair: "
+                << (host_port_pair ? host_port_pair : "null")
+                << " client_cert_buffer: " << client_cert_buffer
+                << " private_key_buffer: " << private_key_buffer << ".";
+    return;
+  }
+  {  // Check whether engine is running.
+    base::AutoLock lock(lock_);
+    if (!context_) {
+      return;
+    }
+  }
+
+  base::span<const uint8_t> cert_from_store_span =
+      base::span(static_cast<uint8_t*>(client_cert_buffer->GetData()),
+                      client_cert_buffer->GetSize());
+  net::CertificateList certs =
+      net::X509Certificate::CreateCertificateListFromBytes(
+          cert_from_store_span, net::X509Certificate::FORMAT_AUTO);
+  if (certs.empty()) {
+    LOG(ERROR) << "Could not decode certificate data.";
+  }
+  scoped_refptr<net::X509Certificate> client_cert =
+      certs.empty() ? nullptr : certs[0];
+
+  scoped_refptr<net::SSLPrivateKey> private_key = net::LoadPrivateKeyFromPEM(
+      std::string_view(static_cast<char*>(private_key_buffer->GetData()),
+                        private_key_buffer->GetSize()));
+
+  context_->SetClientCertificate(net::HostPortPair::FromString(host_port_pair),
+                                 client_cert, private_key);
+}
+
+bool Cronet_EngineImpl::ClearClientCertificate(Cronet_String host_port_pair) {
+  if (host_port_pair == nullptr) {
+    LOG(DFATAL) << "host_port_pair must be non-null.";
+    return false;
+  }
+  {  // Check whether engine is running.
+    base::AutoLock lock(lock_);
+    if (!context_) {
+      return false;
+    }
+  }
+  return context_->ClearClientCertificate(
+      net::HostPortPair::FromString(host_port_pair));
 }
 
 namespace {

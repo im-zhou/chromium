@@ -9,7 +9,9 @@
 #include "net/ssl/ssl_platform_key_util.h"
 #include "net/ssl/ssl_private_key.h"
 #include "net/ssl/threaded_ssl_private_key.h"
+#include "third_party/boringssl/src/include/openssl/bio.h"
 #include "third_party/boringssl/src/include/openssl/evp.h"
+#include "third_party/boringssl/src/include/openssl/pem.h"
 #include "third_party/boringssl/src/include/openssl/rsa.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
@@ -76,6 +78,23 @@ scoped_refptr<SSLPrivateKey> WrapOpenSSLPrivateKey(
   return base::MakeRefCounted<ThreadedSSLPrivateKey>(
       std::make_unique<OpenSSLPrivateKey>(std::move(key)),
       GetSSLPlatformKeyTaskRunner());
+}
+
+scoped_refptr<SSLPrivateKey> LoadPrivateKeyFromPEM(
+    const std::string_view& data) {
+  bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(const_cast<char*>(data.data()),
+                                           static_cast<int>(data.size())));
+  if (!bio) {
+    LOG(ERROR) << "Could not allocate BIO for buffer?";
+    return nullptr;
+  }
+  bssl::UniquePtr<EVP_PKEY> key(
+      PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  if (!key) {
+    LOG(ERROR) << "Could not decode private key data.";
+    return nullptr;
+  }
+  return WrapOpenSSLPrivateKey(std::move(key));
 }
 
 }  // namespace net

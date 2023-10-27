@@ -430,6 +430,25 @@ interface Engine {
    * its registered Executor.
    */
   RemoveRequestFinishedListener(RequestFinishedInfoListener listener);
+
+  /**
+   * Configures all subsequent connections to server designated with {@code host_port_pair}
+   * to authenticate with {@code client_cert_data} and {@code private_key_data} when requested.
+   * {@code client_cert_data} can be PEM/DER encoded.
+   * {@code private_key_data} is supposed to be PEM encoded.
+   *
+   * The method can be called only after the engine is started.
+   */
+  SetClientCertificate(string host_port_pair, Buffer client_cert_buffer, Buffer private_key_buffer);
+
+  /**
+   * Clears a client certificate preference for server designated with {@code host_port_pair}
+   * set by SetClientCertificate(). Returns true if one was removed and false otherwise.
+   *
+   * The method can be called only after the engine is started.
+   */
+  [Sync]
+  ClearClientCertificate(string host_port_pair) => (bool removed);
 };
 
 /**
@@ -610,6 +629,13 @@ struct EngineParams {
    * JSON formatted experimental options to be used in Cronet Engine.
    */
   string experimental_options;
+
+  /**
+   * Sets a default value for the Proxy Server to be used for UrlRequests
+   * created by this engine. Cronet will forward this requests to destination
+   * using this proxy.
+   */
+  string proxy_server;
 };
 
 /**
