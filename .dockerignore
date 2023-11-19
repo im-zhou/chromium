@@ -1,0 +1,11 @@
+.dockerignore
+.gcloudignore
+
+# Git
+.git*
+
+# Idea
+.idea
+
+# Docs
+README.md
