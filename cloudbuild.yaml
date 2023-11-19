@@ -1,0 +1,17 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build',
+         '--build-arg',
+         'CHROMIUM_VERSION=${_CHROMIUM_VERSION}',
+         '-t',
+         'gcr.io/$PROJECT_ID/cronet:${_IMAGE_LABEL}',
+         '.']
+substitutions:
+    _IMAGE_LABEL: ${_CHROMIUM_VERSION:-latest}
+options:
+    substitutionOption: 'ALLOW_LOOSE'
+    dynamicSubstitutions: true
+images: [
+    'gcr.io/$PROJECT_ID/cronet:${_IMAGE_LABEL}',
+]
+timeout: 86400s
