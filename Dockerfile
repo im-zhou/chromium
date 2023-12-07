@@ -20,7 +20,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     file \
     python3 \
     lsb-release \
-    build-essential
+    build-essential \
+    keyboard-configuration
 
 # Install Chromium's depot_tools.
 WORKDIR workspace
@@ -69,7 +70,7 @@ RUN git remote add weblifeio https://github.com/weblifeio/chromium \
 FROM build3 AS build4
 
 # Build Cronet
-RUN gn gen out/Cronet \
+RUN gn gen out/Cronet --args="is_debug = false" \
     && ninja -C out/Cronet \
     cronet_package \
     cronet_sample
