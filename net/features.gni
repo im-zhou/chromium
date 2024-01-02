@@ -51,6 +51,11 @@ declare_args() {
   # Platforms for which certificate verification can only be performed using
   # the builtin cert verifier with the Chrome Root Store.
   chrome_root_store_only = is_win || is_mac || is_linux || is_chromeos
+
+    # FilterSourceStream is decoding the body as it gets back from destination,according
+    # to the content encoding. With this flag it disables decoding the body stream,
+    # so it will be unchanged.
+    disable_stream_decoding_in_filters = true
 }
 
 assert(!chrome_root_store_optional || !chrome_root_store_only,

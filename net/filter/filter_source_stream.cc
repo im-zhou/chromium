@@ -17,6 +17,9 @@
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 
+#include "build/build_config.h"
+#include "net/net_buildflags.h"
+
 namespace net {
 
 namespace {
@@ -101,7 +104,11 @@ FilterSourceStream::SourceType FilterSourceStream::ParseEncodingType(
   if (encoding_type == kEncodingMap.end()) {
     return TYPE_UNKNOWN;
   }
+  #if BUILDFLAG(DISABLE_STREAM_DECODING_IN_FILTERS)
+  return TYPE_UNKNOWN;
+  #else
   return encoding_type->second;
+  #endif
 }
 
 int FilterSourceStream::DoLoop(int result) {

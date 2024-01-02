@@ -104,6 +104,7 @@ buildflag_header("buildflags") {
     "CHROME_ROOT_STORE_OPTIONAL=$chrome_root_store_optional",
     "CHROME_ROOT_STORE_ONLY=$chrome_root_store_only",
     "CHROME_ROOT_STORE_SUPPORTED=$chrome_root_store_supported",
+    "DISABLE_STREAM_DECODING_IN_FILTERS=$disable_stream_decoding_in_filters",
   ]
 }
 
