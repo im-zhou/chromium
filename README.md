@@ -14,8 +14,8 @@ git clone -b build/cronet --single-branch git@github.com:weblifeio/chromium.git 
 ```sh
 docker build . \
 	--file Dockerfile \
-	--build-arg CHROMIUM_VERSION="121.0.6103.0" \
-	--tag cronet:"121.0.6103.0"
+	--build-arg CHROMIUM_VERSION="121.0.6167.85" \
+	--tag cronet:"121.0.6167.85"
 ```
 
 ## Cloud Build
@@ -23,6 +23,6 @@ docker build . \
 ```sh
 gcloud builds submit . \
 	--config=cloudbuild.yaml \
-	--substitutions=_CHROMIUM_VERSION="121.0.6103.0" \
+	--substitutions=_CHROMIUM_VERSION="121.0.6167.85" \
 	--async
 ```
