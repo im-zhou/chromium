@@ -786,3 +786,49 @@ if (enable_extensions) {
     libfuzzer_options = [ "rss_limit_mb=4096" ]
   }
 }
+
+_url_pattern_api_shared_lib_name = "url_pattern_api"
+
+config("shared_library_public_config") {
+  if (is_mac && !is_component_build) {
+  # Executable targets that depend on the shared libraries below need to have
+  # the rpath setup in non-component build configurations.
+    ldflags = [ "-Wl,-rpath,@executable_path/" ]
+  }
+}
+
+shared_library("url_pattern_api") {
+  output_name = _url_pattern_api_shared_lib_name
+
+  deps = [
+    "//base",
+    "//extensions/common",
+    "//net",
+  ]
+
+  sources = [
+    "url_pattern_api.h",
+    "url_pattern_api.cc",
+  ]
+
+  if (is_mac && !is_component_build) {
+    ldflags = [
+      "-install_name",
+      "@executable_path/$shlib_prefix$_url_pattern_api_shared_lib_name$shlib_extension",
+    ]
+    public_configs = [ ":shared_library_public_config" ]
+  }
+}
+
+executable("url_pattern_api_sample") {
+  testonly = true
+  sources = [
+    "url_pattern_api_sample/main.cc"
+  ]
+  deps = [
+    "//extensions/common:url_pattern_api",
+  ]
+  if ((is_linux || is_chromeos) && !is_component_build) {
+    public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
+  }
+}
