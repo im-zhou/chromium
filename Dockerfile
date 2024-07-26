@@ -72,8 +72,10 @@ FROM build2 AS build3
 # Build Cronet
 RUN gn gen out/Cronet --args="is_debug = false" \
     && ninja -C out/Cronet \
-    cronet_package \
-    cronet_sample
+    "cronet_package" \
+    "cronet_sample" \
+    "extensions/common:url_pattern_api" \
+    "extensions/common:url_pattern_api_sample"
 
 #
 # Copy libraries to the final image
@@ -82,7 +84,7 @@ FROM base AS result
 
 COPY --from=build3 /workspace/chromium/src/out/Cronet/cronet/include/* /usr/local/include/cronet/
 COPY --from=build3 /workspace/chromium/src/out/Cronet/*.so /usr/local/lib/cronet/
-COPY --from=build3 /workspace/chromium/src/out/Cronet/cronet_sample /usr/local/bin/
+COPY --from=build3 /workspace/chromium/src/out/Cronet/*_sample /usr/local/bin/
 
 RUN ln -s /usr/local/lib/cronet/libcronet.*.so /usr/local/lib/cronet/libcronet.so
 
