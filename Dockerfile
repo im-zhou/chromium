@@ -1,4 +1,4 @@
-FROM ubuntu:jammy AS base
+FROM ubuntu:noble AS base
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -70,7 +70,7 @@ RUN git remote add weblifeio https://github.com/weblifeio/chromium \
 FROM build2 AS build3
 
 # Build Cronet
-RUN gn gen out/Cronet --args="is_debug = false" \
+RUN gn gen out/Cronet --args="is_debug=false icu_use_data_file=false" \
     && ninja -C out/Cronet \
     "cronet_package" \
     "cronet_sample" \
