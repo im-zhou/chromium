@@ -258,12 +258,14 @@ CronetContext::NetworkTasks::~NetworkTasks() {
 }
 
 void CronetContext::InitRequestContextOnInitThread(
-    const std::string proxy_server) {
+    const std::string proxy_server,
+    const std::string proxy_user,
+    const std::string proxy_password) {
   DCHECK(OnInitThread());
   // Cannot create this inside Initialize because Android requires this to be
   // created on the JNI thread.
   auto proxy_config_service =
-      cronet::CreateProxyConfigService(proxy_server, GetNetworkTaskRunner());
+      cronet::CreateProxyConfigService(proxy_server, proxy_user, proxy_password, GetNetworkTaskRunner());
   g_net_log.Get().EnsureInitializedOnInitThread();
   GetNetworkTaskRunner()->PostTask(
       FROM_HERE,

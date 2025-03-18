@@ -96,6 +96,8 @@ struct Cronet_EngineParams {
   double network_thread_priority = std::numeric_limits<double>::quiet_NaN();
   std::string experimental_options;
   std::string proxy_server;
+  std::string proxy_user;
+  std::string proxy_password;
 };
 
 // Struct Cronet_HttpHeader.

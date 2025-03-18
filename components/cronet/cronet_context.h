@@ -114,7 +114,9 @@ class CronetContext {
   virtual ~CronetContext();
 
   // Called on init thread to initialize URLRequestContext.
-  void InitRequestContextOnInitThread(std::string proxy_server = "");
+  void InitRequestContextOnInitThread(std::string proxy_server = "",
+                                      std::string proxy_user = "",
+                                      std::string proxy_password = "");
 
   // Posts a task that might depend on the context being initialized
   // to the network thread.

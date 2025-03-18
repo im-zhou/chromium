@@ -7,6 +7,7 @@
 #include <limits>
 #include <utility>
 
+#include "base/base64.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -317,6 +318,18 @@ void CronetURLRequest::NetworkTasks::Start(
       initial_url_, net::DEFAULT_PRIORITY, this, MISSING_TRAFFIC_ANNOTATION);
   url_request_->SetLoadFlags(initial_load_flags_);
   url_request_->set_method(method);
+//  // ------------------- 这里开始注入 Proxy-Authorization -------------------
+//  const std::string& proxy_user = context->config()->proxy_user;
+//  const std::string& proxy_password = context->config()->proxy_password;
+//  if (!proxy_user.empty() && !proxy_password.empty()) {
+//    std::string credentials = proxy_user + ":" + proxy_password;
+//    std::string base64_credentials;
+//    base::Base64Encode(credentials, &base64_credentials);
+//    std::string proxy_auth_header = "Basic " + base64_credentials;
+//    request_headers->SetHeader("Proxy-Authorization", proxy_auth_header);
+//    // VLOG(1) << "Added Proxy-Authorization header";
+//  }
+//  // ----------------------------------------------------------------------
   url_request_->SetExtraRequestHeaders(*request_headers);
   url_request_->SetPriority(initial_priority_);
   url_request_->SetIdempotency(idempotency_);

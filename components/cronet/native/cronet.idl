@@ -636,6 +636,8 @@ struct EngineParams {
    * using this proxy.
    */
   string proxy_server;
+  string proxy_username;
+  string proxy_password;
 };
 
 /**

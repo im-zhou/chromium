@@ -335,6 +335,18 @@ void Cronet_EngineParams_proxy_server_set(Cronet_EngineParamsPtr self,
   self->proxy_server = proxy_server;
 }
 
+void Cronet_EngineParams_proxy_user_set(Cronet_EngineParamsPtr self,
+                                          const Cronet_String proxy_user) {
+  DCHECK(self);
+  self->proxy_user = proxy_user;
+}
+
+void Cronet_EngineParams_proxy_password_set(Cronet_EngineParamsPtr self,
+                                          const Cronet_String proxy_password) {
+  DCHECK(self);
+  self->proxy_password = proxy_password;
+}
+
 // Struct Cronet_EngineParams getters.
 bool Cronet_EngineParams_enable_check_result_get(
     const Cronet_EngineParamsPtr self) {
@@ -441,6 +453,18 @@ Cronet_String Cronet_EngineParams_proxy_server_get(
     const Cronet_EngineParamsPtr self) {
   DCHECK(self);
   return self->proxy_server.c_str();
+}
+
+Cronet_String Cronet_EngineParams_proxy_user_get(
+    const Cronet_EngineParamsPtr self) {
+  DCHECK(self);
+  return self->proxy_user.c_str();
+}
+
+Cronet_String Cronet_EngineParams_proxy_password_get(
+    const Cronet_EngineParamsPtr self) {
+  DCHECK(self);
+  return self->proxy_password.c_str();
 }
 
 // Struct Cronet_HttpHeader.

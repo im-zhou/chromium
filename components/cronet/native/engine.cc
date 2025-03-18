@@ -212,7 +212,9 @@ Cronet_RESULT Cronet_EngineImpl::StartWithParams(
   cronet::PostTaskToInitThread(
       FROM_HERE, base::BindOnce(&CronetContext::InitRequestContextOnInitThread,
                                 base::Unretained(context_.get()),
-                                std::move(params->proxy_server)));
+                                std::move(params->proxy_server),
+                                std::move(params->proxy_user),
+                                std::move(params->proxy_password)));
   return CheckResult(Cronet_RESULT_SUCCESS);
 }
 
